@@ -25,7 +25,7 @@ def get_html(url):
 		return False
 
 
-def get_section_info(url):
+def get_section_info(url, type):
 	mushrooms = []
 
 	i = 1
@@ -39,10 +39,13 @@ def get_section_info(url):
 		bs = BeautifulSoup(html, 'html.parser')
 
 		for item in bs.find_all('div', class_='catcont-list'):
+			grib_lat_name = item.h4.span.text
 			grib = {}
-			grib['rus_name'] = item.find('a', class_ = 'catcont-list__title').text
-			grib['lat_name'] = item.h4.span.text
-			grib['link'] = item.find('a', class_ = 'catcont-list__title')['href']
+			grib[grib_lat_name] = {
+				'rus_name': item.find('a', class_ = 'catcont-list__title').text,
+				'link': item.find('a', class_ = 'catcont-list__title')['href']
+			}
+
 			mushrooms.append(grib)
 
 		i += 1	
@@ -57,16 +60,11 @@ def get_mushrooms_dictionary():
 		'Несъедобные': 'http://wikigrib.ru/vidy/nesedobnye-griby/',
 	}
 
-	mushroom_dictionary = {
-		'Съедобные': {},
-		'Условно-съедобные': {},
-		'Несъедобные': {},
-
-	}
+	mushroom_dictionary = []
 
 	print('Подождите немного, идет построение списка грибов... Это может занять около минуты.')
 	for type in sections:
-		mushroom_dictionary[type] = get_section_info(sections[type])
+		mushroom_dictionary.append(get_section_info(sections[type], type))
 
 	#pprint.pprint(mushroom_dictionary)	
 	return mushroom_dictionary
@@ -97,4 +95,5 @@ if __name__ == '__main__':
 
 	# mushroom_dictionary = get_mushrooms_dictionary()
 	# save_dictionary_to_json_file(mushroom_dictionary)
-	pprint.pprint(get_mushrooms_from_json_file())
+	 pprint.pprint(get_mushrooms_from_json_file())
+	# pprint.pprint(mushroom_dictionary)
