@@ -25,12 +25,16 @@ def get_html(url):
 		return False
 
 
-def get_section_info(url, type):
-	mushrooms = []
+def get_section_info(url, grib_type):
+	'''
+	Gets information for one of the sections (eatable etc)
+	'''
+	mushrooms = {}
 
 	i = 1
 	while True:
 		page_url = url + 'page/' + str(i) + '/'
+		#print(page_url)
 		html = get_html(page_url)
 
 		if not html:
@@ -38,15 +42,38 @@ def get_section_info(url, type):
 
 		bs = BeautifulSoup(html, 'html.parser')
 
-		for item in bs.find_all('div', class_='catcont-list'):
-			grib_lat_name = item.h4.span.text
-			grib = {}
-			grib[grib_lat_name] = {
-				'rus_name': item.find('a', class_ = 'catcont-list__title').text,
-				'link': item.find('a', class_ = 'catcont-list__title')['href']
-			}
+		grib_num = 0
 
-			mushrooms.append(grib)
+		for item in bs.select("section.post.type-post"): 
+
+			if not item:
+				print('Элемент <section> не найден на странице')
+				continue
+
+			try:
+				grib_lat_name = item.h4.span.text
+				grib = {}
+				grib[grib_lat_name] = {
+					'rus_name': item.find('a', class_ = 'catcont-list__title').text,
+					'link': item.find('a', class_ = 'catcont-list__title')['href'],
+					'type': grib_type
+				}
+			except:
+				print(item.prettify())
+				continue
+
+			if grib_lat_name not in mushrooms.keys():
+				mushrooms.update(grib)
+				grib_num += 1
+			else:
+				print(grib_lat_name + ' дублируется. Варианты: ' + mushrooms[grib_lat_name]['rus_name'] + ' (оставлен в нашем списке), ' + grib[grib_lat_name]['rus_name'] + ' (исключен)\n')
+	
+
+			#pprint.pprint(mushrooms)
+
+
+		# print('Количество грибов на странице ' + str(i) + ': ' + str(grib_num))
+		# print(len(mushrooms))
 
 		i += 1	
 
@@ -60,13 +87,15 @@ def get_mushrooms_dictionary():
 		'Несъедобные': 'http://wikigrib.ru/vidy/nesedobnye-griby/',
 	}
 
-	mushroom_dictionary = []
+	mushroom_dictionary = {}
 
-	print('Подождите немного, идет построение списка грибов... Это может занять около минуты.')
-	for type in sections:
-		mushroom_dictionary.append(get_section_info(sections[type], type))
+	print('Подождите немного, идет построение списка грибов... Это может занять около минуты.\n')
+	for section in sections:
+		mushroom_dictionary.update(get_section_info(sections[section], section))
+		# print(type(get_section_info(sections[section], section)))
 
 	#pprint.pprint(mushroom_dictionary)	
+	# print('общее количество грибов: ' + str(count(mushroom_dictionary)))
 	return mushroom_dictionary
 
 
@@ -78,9 +107,6 @@ def save_dictionary_to_json_file(dict):
 	f.write(json_dict) 
 	f.close()
 
-	#with open (“mushrooms.txt”, “w”) as file: 
-	#	file.write(json) 
-
 
 def get_mushrooms_from_json_file():
 	f = open('mushrooms.txt', 'r')
@@ -90,10 +116,31 @@ def get_mushrooms_from_json_file():
 	dictionary = json.loads(json_dict)
 	return dictionary
 
+def print_mushroom_dictionary(dict):
+	i = 1
+	for m in dict:
+		print(i)
+		pprint.pprint(m)
+		pprint.pprint(dict[m])
+		i += 1
+
 
 if __name__ == '__main__':
 
-	# mushroom_dictionary = get_mushrooms_dictionary()
-	# save_dictionary_to_json_file(mushroom_dictionary)
-	 pprint.pprint(get_mushrooms_from_json_file())
-	# pprint.pprint(mushroom_dictionary)
+	#For scraping mashrooms from WikiGrib
+	mushroom_dictionary = get_mushrooms_dictionary()
+	save_dictionary_to_json_file(mushroom_dictionary)
+	print_mushroom_dictionary(mushroom_dictionary)
+
+	# Print mushrooma from dictionary
+	# pprint.pprint(get_mushrooms_from_json_file())
+
+	'''
+	mushrooms = get_mushrooms_from_json_file()
+	print_mushroom_dictionary(mushrooms)
+	'''
+
+	# TODO заменить пробелы на ниж подчеркивание
+	#grib_d = get_section_info('http://wikigrib.ru/vidy/sedobnye-griby/', 'Съедобные')
+	#print_mushroom_dictionary(grib_d)
+	#pprint.pprint(grib_d)
