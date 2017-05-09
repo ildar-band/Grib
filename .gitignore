@@ -1,3 +1,7 @@
 gribenv/
 __pycache__
+images/
+.scrapecache/
+main_pictures/
+google_scraper.db
 
